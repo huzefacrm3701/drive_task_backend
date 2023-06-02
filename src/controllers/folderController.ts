@@ -6,9 +6,17 @@ import { Folder, ParentFoldersList } from "../interfaces/folderInterface";
 import { ErrorResponse } from "../interfaces/errorInterface";
 import { FileInterface } from "../interfaces/fileInterface";
 
+const { GoogleAuth } = require("google-auth-library");
+const { google } = require("googleapis");
+
 const { v4: uuidv4 } = require("uuid");
 const admin = require("firebase-admin");
 const moment = require("moment");
+import { uploadToFirestore } from "../utils/utils";
+
+const dotenv = require("dotenv");
+
+const { parsed } = dotenv.config();
 
 const user_id = "test123";
 const business_id = "test12345";
@@ -322,38 +330,27 @@ export const renameFolderById = async (req: Request, res: Response) => {
 
 export const addFilesToFolder = async (req: any, res: Response) => {
   try {
-    const bucket = admin.storage().bucket();
     const folder: Folder = await folderModelSchema.findOne({
       user_id: user_id,
       is_delete: false,
       _id: req.params.id,
     });
 
-    let filesArray: Array<FileInterface> = [];
-
     if (!folder) {
       throw new Error("Folder Does Not Exist");
     }
 
+    let filesArray: Array<FileInterface> = [];
+
     for (const file of req.files) {
-      const fileStream = file.buffer;
-      const filename = `${uuidv4()}-${file.originalname}`;
-      const storageFile = bucket.file(filename);
-      const metadata = { contentType: file.mimetype };
-      const uploadStream = storageFile.createWriteStream({ metadata });
-
-      uploadStream.end(fileStream);
-      await new Promise((resolve, reject) => {
-        uploadStream.on("error", reject);
-        uploadStream.on("finish", resolve);
-      });
-
-      const signedUrlResponse = await storageFile.getSignedUrl({
-        action: "read",
-        expires: "03-17-2025",
-      });
-
-      const downloadUrl = signedUrlResponse[0];
+      const accessToken = uuidv4();
+      const fileName = `${accessToken}-${file.originalname}`;
+      const downloadUrl = await uploadToFirestore(
+        file.mimetype,
+        file.buffer,
+        fileName,
+        accessToken
+      );
 
       if (downloadUrl) {
         const newFile = await fileModelSchema.create({
@@ -361,9 +358,9 @@ export const addFilesToFolder = async (req: any, res: Response) => {
           business_id: business_id,
           company_id: company_id,
           folderId: folder._id,
-          fileType: metadata.contentType,
+          fileType: file.mimetype,
           fileName: file.originalname,
-          uploadedFileName: filename,
+          uploadedFileName: fileName,
           url: downloadUrl,
           created_by: user_id,
           modified_by: "",
@@ -384,13 +381,105 @@ export const addFilesToFolder = async (req: any, res: Response) => {
   }
 };
 
-// export const uploadFolder = async (req: any, res: Response) => {
-//   // const { id } = req.params;
-//   // const { files } = req;
-//   // const { filesPath } = req.body;
-//   // console.log(id, files, filesPath);
-//   console.log(req)
-// };
+export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
+  try {
+    const files: {
+      id: string;
+      mimeType: string;
+      name: string;
+      temp: "GOOGLE FILE" | "OTHER FILE";
+      extension: string;
+    }[] = req.body;
+
+    const { folderId } = req.params;
+
+    let folder: Folder = await folderModelSchema.findOne({
+      user_id: user_id,
+      is_delete: false,
+      _id: folderId,
+    });
+
+    if (!folder) {
+      throw new Error("Folder Does Not Exist");
+    }
+
+    let filesArray: Array<FileInterface> = [];
+
+    const accessToken = uuidv4();
+
+    const keyFile = parsed.keyFile;
+
+    const auth = new GoogleAuth({
+      keyFile,
+      scopes: "https://www.googleapis.com/auth/drive",
+    });
+
+    const client = await auth.getClient();
+
+    const service = google.drive({ version: "v3", auth: client });
+
+    for(const file of files) {
+      const fileName = `${accessToken}-${file.name}`;
+
+      let fileResponse: any;
+
+      if (file.temp === "OTHER FILE") {
+        fileResponse = await service.files.get(
+          {
+            fileId: file.id,
+            alt: "media",
+          },
+          { responseType: "arraybuffer" }
+        );
+      } else {
+        fileResponse = await service.files.export(
+          {
+            fileId: file.id,
+            mimeType: file.mimeType,
+          },
+          { responseType: "arraybuffer" }
+        );
+      }
+
+      const arraybuffer = fileResponse.data;
+
+      const downloadUrl = await uploadToFirestore(
+        file.mimeType,
+        arraybuffer,
+        fileName,
+        accessToken
+      );
+
+      if (downloadUrl) {
+        const newFile = await fileModelSchema.create({
+          user_id: user_id,
+          business_id: business_id,
+          company_id: company_id,
+          folderId: folder._id,
+          fileType: file.mimeType,
+          fileName: file.temp === 'GOOGLE FILE' ? `${file.name}${file.extension}` : file.name,
+          uploadedFileName: fileName,
+          url: downloadUrl,
+          created_by: user_id,
+          modified_by: "",
+          date_created: moment(),
+          date_modified: moment(),
+        });
+
+        filesArray.push(newFile);
+        folder.files.push(newFile._id);
+      }
+    };
+
+    await folder.save();
+
+    res.status(200).json({ data: filesArray });
+  } catch (error: unknown) {
+    console.log("errrr", error);
+    const errorResponse: ErrorResponse = { error: (error as Error).message };
+    return res.status(400).json(errorResponse);
+  }
+};
 
 export const renameFileById = async (req: Request, res: Response) => {
   try {

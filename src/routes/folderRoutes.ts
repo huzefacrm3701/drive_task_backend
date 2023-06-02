@@ -1,5 +1,6 @@
 import express from "express";
 import * as folderController from "../controllers/folderController";
+import * as folderMiddlewares from "../middlewares/folderMiddlewares";
 
 const multer = require("multer");
 const folderRouter = express.Router();
@@ -13,13 +14,11 @@ folderRouter.post(
   upload.array("files"),
   folderController.addFilesToFolder
 );
-
-// // Upload folders
-// folderRouter.post(
-//   "/uploadFolder/:id",
-//   upload.array("folders"),
-//   folderController.uploadFolder
-// );
+folderRouter.post(
+  "/addGoogleDriveFilesToFolder/:folderId",
+  folderMiddlewares.getMimeType,
+  folderController.addGoogleDriveFilesToFolder
+);
 
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);

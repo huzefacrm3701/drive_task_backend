@@ -28,18 +28,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const folderController = __importStar(require("../controllers/folderController"));
+const folderMiddlewares = __importStar(require("../middlewares/folderMiddlewares"));
 const multer = require("multer");
 const folderRouter = express_1.default.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 // Add files and folders route
 folderRouter.post("/addNewFolder", folderController.addNewFolder);
 folderRouter.post("/addFilesToFolder/:id", upload.array("files"), folderController.addFilesToFolder);
-// // Upload folders
-// folderRouter.post(
-//   "/uploadFolder/:id",
-//   upload.array("folders"),
-//   folderController.uploadFolder
-// );
+folderRouter.post("/addGoogleDriveFilesToFolder/:folderId", folderMiddlewares.getMimeType, folderController.addGoogleDriveFilesToFolder);
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);
 folderRouter.get("/getFolderById/:id", folderController.getFolderById);
