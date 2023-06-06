@@ -13,6 +13,9 @@ const { v4: uuidv4 } = require("uuid");
 const admin = require("firebase-admin");
 const moment = require("moment");
 import { uploadToFirestore } from "../utils/utils";
+import jwtDecode from "jwt-decode";
+import Axios, { AxiosResponse } from "axios";
+import axios from "axios";
 
 const dotenv = require("dotenv");
 
@@ -21,6 +24,8 @@ const { parsed } = dotenv.config();
 const user_id = "test123";
 const business_id = "test12345";
 const company_id = "test@123";
+
+const accessToken = uuidv4();
 
 export const addNewFolder = async (req: Request, res: Response) => {
   try {
@@ -343,7 +348,6 @@ export const addFilesToFolder = async (req: any, res: Response) => {
     let filesArray: Array<FileInterface> = [];
 
     for (const file of req.files) {
-      const accessToken = uuidv4();
       const fileName = `${accessToken}-${file.originalname}`;
       const downloadUrl = await uploadToFirestore(
         file.mimetype,
@@ -405,8 +409,6 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
 
     let filesArray: Array<FileInterface> = [];
 
-    const accessToken = uuidv4();
-
     const keyFile = parsed.keyFile;
 
     const auth = new GoogleAuth({
@@ -418,7 +420,7 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
 
     const service = google.drive({ version: "v3", auth: client });
 
-    for(const file of files) {
+    for (const file of files) {
       const fileName = `${accessToken}-${file.name}`;
 
       let fileResponse: any;
@@ -457,7 +459,10 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
           company_id: company_id,
           folderId: folder._id,
           fileType: file.mimeType,
-          fileName: file.temp === 'GOOGLE FILE' ? `${file.name}${file.extension}` : file.name,
+          fileName:
+            file.temp === "GOOGLE FILE"
+              ? `${file.name}${file.extension}`
+              : file.name,
           uploadedFileName: fileName,
           url: downloadUrl,
           created_by: user_id,
@@ -469,7 +474,75 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
         filesArray.push(newFile);
         folder.files.push(newFile._id);
       }
-    };
+    }
+
+    await folder.save();
+
+    res.status(200).json({ data: filesArray });
+  } catch (error: unknown) {
+    console.log("errrr", error);
+    const errorResponse: ErrorResponse = { error: (error as Error).message };
+    return res.status(400).json(errorResponse);
+  }
+};
+
+export const addOneDriveFilesToFolder = async (req: any, res: Response) => {
+  try {
+    const files = req.body;
+
+    const { folderId } = req.params;
+
+    let folder: Folder = await folderModelSchema.findOne({
+      user_id: user_id,
+      is_delete: false,
+      _id: folderId,
+    });
+
+    if (!folder) {
+      throw new Error("Folder Does Not Exist");
+    }
+
+    let filesArray: Array<FileInterface> = [];
+
+    for (const file of files) {
+      const fileUrl = file.fileUrl;
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+
+      const mimeType = response.headers["content-type"];
+      const arrayBuffer = response.data;
+      const fileName = `${accessToken}-${file.name}`;
+      const downloadUrl = await uploadToFirestore(
+        mimeType,
+        arrayBuffer,
+        fileName,
+        accessToken
+      );
+
+      if (downloadUrl) {
+        const newFile = await fileModelSchema.create({
+          user_id: user_id,
+          business_id: business_id,
+          company_id: company_id,
+          folderId: folder._id,
+          fileType: mimeType,
+          fileName:
+            file.temp === "GOOGLE FILE"
+              ? `${file.name}${file.extension}`
+              : file.name,
+          uploadedFileName: fileName,
+          url: downloadUrl,
+          created_by: user_id,
+          modified_by: "",
+          date_created: moment(),
+          date_modified: moment(),
+        });
+
+        filesArray.push(newFile);
+        folder.files.push(newFile._id);
+      }
+    }
 
     await folder.save();
 

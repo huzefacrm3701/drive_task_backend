@@ -19,6 +19,10 @@ folderRouter.post(
   folderMiddlewares.getMimeType,
   folderController.addGoogleDriveFilesToFolder
 );
+folderRouter.post(
+  "/addOneDriveFilesToFolder/:folderId",
+  folderController.addOneDriveFilesToFolder
+);
 
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);

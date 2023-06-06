@@ -36,6 +36,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 folderRouter.post("/addNewFolder", folderController.addNewFolder);
 folderRouter.post("/addFilesToFolder/:id", upload.array("files"), folderController.addFilesToFolder);
 folderRouter.post("/addGoogleDriveFilesToFolder/:folderId", folderMiddlewares.getMimeType, folderController.addGoogleDriveFilesToFolder);
+folderRouter.post("/addOneDriveFilesToFolder/:folderId", folderController.addOneDriveFilesToFolder);
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);
 folderRouter.get("/getFolderById/:id", folderController.getFolderById);
