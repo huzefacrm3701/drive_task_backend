@@ -25,8 +25,6 @@ const user_id = "test123";
 const business_id = "test12345";
 const company_id = "test@123";
 
-const accessToken = uuidv4();
-
 export const addNewFolder = async (req: Request, res: Response) => {
   try {
     let { folderName, parentFolderId } = req.body;
@@ -348,6 +346,7 @@ export const addFilesToFolder = async (req: any, res: Response) => {
     let filesArray: Array<FileInterface> = [];
 
     for (const file of req.files) {
+      const accessToken = uuidv4();
       const fileName = `${accessToken}-${file.originalname}`;
       const downloadUrl = await uploadToFirestore(
         file.mimetype,
@@ -421,6 +420,8 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
     const service = google.drive({ version: "v3", auth: client });
 
     for (const file of files) {
+      const accessToken = uuidv4();
+
       const fileName = `${accessToken}-${file.name}`;
 
       let fileResponse: any;
@@ -505,6 +506,7 @@ export const addOneDriveFilesToFolder = async (req: any, res: Response) => {
     let filesArray: Array<FileInterface> = [];
 
     for (const file of files) {
+      const accessToken = uuidv4();
       const fileUrl = file.fileUrl;
       const response = await axios.get(fileUrl, {
         responseType: "arraybuffer",

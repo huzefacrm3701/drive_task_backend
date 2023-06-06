@@ -19,7 +19,6 @@ const { parsed } = dotenv.config();
 const user_id = "test123";
 const business_id = "test12345";
 const company_id = "test@123";
-const accessToken = uuidv4();
 const addNewFolder = async (req, res) => {
     try {
         let { folderName, parentFolderId } = req.body;
@@ -316,6 +315,7 @@ const addFilesToFolder = async (req, res) => {
         }
         let filesArray = [];
         for (const file of req.files) {
+            const accessToken = uuidv4();
             const fileName = `${accessToken}-${file.originalname}`;
             const downloadUrl = await (0, utils_1.uploadToFirestore)(file.mimetype, file.buffer, fileName, accessToken);
             if (downloadUrl) {
@@ -367,6 +367,7 @@ const addGoogleDriveFilesToFolder = async (req, res) => {
         const client = await auth.getClient();
         const service = google.drive({ version: "v3", auth: client });
         for (const file of files) {
+            const accessToken = uuidv4();
             const fileName = `${accessToken}-${file.name}`;
             let fileResponse;
             if (file.temp === "OTHER FILE") {
@@ -428,6 +429,7 @@ const addOneDriveFilesToFolder = async (req, res) => {
         }
         let filesArray = [];
         for (const file of files) {
+            const accessToken = uuidv4();
             const fileUrl = file.fileUrl;
             const response = await axios_1.default.get(fileUrl, {
                 responseType: "arraybuffer",
