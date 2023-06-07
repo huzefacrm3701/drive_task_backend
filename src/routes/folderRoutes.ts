@@ -23,6 +23,10 @@ folderRouter.post(
   "/addOneDriveFilesToFolder/:folderId",
   folderController.addOneDriveFilesToFolder
 );
+folderRouter.post(
+  "/addDropboxFilesToFolder/:folderId",
+  folderController.addDropboxFilesToFolder
+);
 
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);

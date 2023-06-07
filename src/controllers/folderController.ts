@@ -17,6 +17,8 @@ import jwtDecode from "jwt-decode";
 import Axios, { AxiosResponse } from "axios";
 import axios from "axios";
 
+const Dropbox = require("dropbox").Dropbox;
+
 const dotenv = require("dotenv");
 
 const { parsed } = dotenv.config();
@@ -489,7 +491,10 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
 
 export const addOneDriveFilesToFolder = async (req: any, res: Response) => {
   try {
-    const files = req.body;
+    const files: {
+      fileUrl: string;
+      name: string;
+    }[] = req.body;
 
     const { folderId } = req.params;
 
@@ -529,10 +534,76 @@ export const addOneDriveFilesToFolder = async (req: any, res: Response) => {
           company_id: company_id,
           folderId: folder._id,
           fileType: mimeType,
-          fileName:
-            file.temp === "GOOGLE FILE"
-              ? `${file.name}${file.extension}`
-              : file.name,
+          fileName: file.name,
+          uploadedFileName: fileName,
+          url: downloadUrl,
+          created_by: user_id,
+          modified_by: "",
+          date_created: moment(),
+          date_modified: moment(),
+        });
+
+        filesArray.push(newFile);
+        folder.files.push(newFile._id);
+      }
+    }
+
+    await folder.save();
+
+    res.status(200).json({ data: filesArray });
+  } catch (error: unknown) {
+    console.log("errrr", error);
+    const errorResponse: ErrorResponse = { error: (error as Error).message };
+    return res.status(400).json(errorResponse);
+  }
+};
+
+export const addDropboxFilesToFolder = async (req: any, res: Response) => {
+  try {
+    const files: {
+      fileUrl: string;
+      name: string;
+    }[] = req.body;
+
+    const { folderId } = req.params;
+
+    let folder: Folder = await folderModelSchema.findOne({
+      user_id: user_id,
+      is_delete: false,
+      _id: folderId,
+    });
+
+    if (!folder) {
+      throw new Error("Folder Does Not Exist");
+    }
+
+    let filesArray: Array<FileInterface> = [];
+
+    for (const file of files) {
+      const accessToken = uuidv4();
+      const fileUrl = file.fileUrl;
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+
+      const mimeType = response.headers["content-type"];
+      const arrayBuffer = response.data;
+      const fileName = `${accessToken}-${file.name}`;
+      const downloadUrl = await uploadToFirestore(
+        mimeType,
+        arrayBuffer,
+        fileName,
+        accessToken
+      );
+
+      if (downloadUrl) {
+        const newFile = await fileModelSchema.create({
+          user_id: user_id,
+          business_id: business_id,
+          company_id: company_id,
+          folderId: folder._id,
+          fileType: mimeType,
+          fileName: file.name,
           uploadedFileName: fileName,
           url: downloadUrl,
           created_by: user_id,
@@ -978,6 +1049,7 @@ export const permanentDeleteFilesAndFolders = async (
       filesToBeDeletedFromFirebase,
     });
   } catch (error: unknown) {
+    console.log(error);
     const errorResponse: ErrorResponse = { error: (error as Error).message };
     return res.status(400).json(errorResponse);
   }

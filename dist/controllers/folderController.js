@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchFilesAndFoldersByName = exports.permanentDeleteFilesAndFolders = exports.restoreFilesAndFolders = exports.getTrash = exports.deleteFoldersByIds = exports.removeFilesFromFolder = exports.moveFileToAnotherFolder = exports.renameFileById = exports.addOneDriveFilesToFolder = exports.addGoogleDriveFilesToFolder = exports.addFilesToFolder = exports.renameFolderById = exports.getFolderById = exports.getRootFolder = exports.getAllFoldersAndFiles = exports.addNewFolder = void 0;
+exports.searchFilesAndFoldersByName = exports.permanentDeleteFilesAndFolders = exports.restoreFilesAndFolders = exports.getTrash = exports.deleteFoldersByIds = exports.removeFilesFromFolder = exports.moveFileToAnotherFolder = exports.renameFileById = exports.addDropboxFilesToFolder = exports.addOneDriveFilesToFolder = exports.addGoogleDriveFilesToFolder = exports.addFilesToFolder = exports.renameFolderById = exports.getFolderById = exports.getRootFolder = exports.getAllFoldersAndFiles = exports.addNewFolder = void 0;
 const folderModel_1 = require("../models/folderModel");
 const mongoose_1 = __importDefault(require("mongoose"));
 const fileModel_1 = require("../models/fileModel");
@@ -14,6 +14,7 @@ const admin = require("firebase-admin");
 const moment = require("moment");
 const utils_1 = require("../utils/utils");
 const axios_1 = __importDefault(require("axios"));
+const Dropbox = require("dropbox").Dropbox;
 const dotenv = require("dotenv");
 const { parsed } = dotenv.config();
 const user_id = "test123";
@@ -445,9 +446,7 @@ const addOneDriveFilesToFolder = async (req, res) => {
                     company_id: company_id,
                     folderId: folder._id,
                     fileType: mimeType,
-                    fileName: file.temp === "GOOGLE FILE"
-                        ? `${file.name}${file.extension}`
-                        : file.name,
+                    fileName: file.name,
                     uploadedFileName: fileName,
                     url: downloadUrl,
                     created_by: user_id,
@@ -469,6 +468,58 @@ const addOneDriveFilesToFolder = async (req, res) => {
     }
 };
 exports.addOneDriveFilesToFolder = addOneDriveFilesToFolder;
+const addDropboxFilesToFolder = async (req, res) => {
+    try {
+        const files = req.body;
+        const { folderId } = req.params;
+        let folder = await folderModel_1.folderModelSchema.findOne({
+            user_id: user_id,
+            is_delete: false,
+            _id: folderId,
+        });
+        if (!folder) {
+            throw new Error("Folder Does Not Exist");
+        }
+        let filesArray = [];
+        for (const file of files) {
+            const accessToken = uuidv4();
+            const fileUrl = file.fileUrl;
+            const response = await axios_1.default.get(fileUrl, {
+                responseType: "arraybuffer",
+            });
+            const mimeType = response.headers["content-type"];
+            const arrayBuffer = response.data;
+            const fileName = `${accessToken}-${file.name}`;
+            const downloadUrl = await (0, utils_1.uploadToFirestore)(mimeType, arrayBuffer, fileName, accessToken);
+            if (downloadUrl) {
+                const newFile = await fileModel_1.fileModelSchema.create({
+                    user_id: user_id,
+                    business_id: business_id,
+                    company_id: company_id,
+                    folderId: folder._id,
+                    fileType: mimeType,
+                    fileName: file.name,
+                    uploadedFileName: fileName,
+                    url: downloadUrl,
+                    created_by: user_id,
+                    modified_by: "",
+                    date_created: moment(),
+                    date_modified: moment(),
+                });
+                filesArray.push(newFile);
+                folder.files.push(newFile._id);
+            }
+        }
+        await folder.save();
+        res.status(200).json({ data: filesArray });
+    }
+    catch (error) {
+        console.log("errrr", error);
+        const errorResponse = { error: error.message };
+        return res.status(400).json(errorResponse);
+    }
+};
+exports.addDropboxFilesToFolder = addDropboxFilesToFolder;
 const renameFileById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -810,6 +861,7 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         });
     }
     catch (error) {
+        console.log(error);
         const errorResponse = { error: error.message };
         return res.status(400).json(errorResponse);
     }

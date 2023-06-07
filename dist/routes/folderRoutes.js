@@ -37,6 +37,7 @@ folderRouter.post("/addNewFolder", folderController.addNewFolder);
 folderRouter.post("/addFilesToFolder/:id", upload.array("files"), folderController.addFilesToFolder);
 folderRouter.post("/addGoogleDriveFilesToFolder/:folderId", folderMiddlewares.getMimeType, folderController.addGoogleDriveFilesToFolder);
 folderRouter.post("/addOneDriveFilesToFolder/:folderId", folderController.addOneDriveFilesToFolder);
+folderRouter.post("/addDropboxFilesToFolder/:folderId", folderController.addDropboxFilesToFolder);
 // Get files and folders route
 folderRouter.get("/getRootFolder", folderController.getRootFolder);
 folderRouter.get("/getFolderById/:id", folderController.getFolderById);
