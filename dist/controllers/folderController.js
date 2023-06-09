@@ -14,7 +14,6 @@ const admin = require("firebase-admin");
 const moment = require("moment");
 const utils_1 = require("../utils/utils");
 const axios_1 = __importDefault(require("axios"));
-const Dropbox = require("dropbox").Dropbox;
 const dotenv = require("dotenv");
 const { parsed } = dotenv.config();
 const user_id = "test123";

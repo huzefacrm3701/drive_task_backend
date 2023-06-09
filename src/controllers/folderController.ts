@@ -13,11 +13,7 @@ const { v4: uuidv4 } = require("uuid");
 const admin = require("firebase-admin");
 const moment = require("moment");
 import { uploadToFirestore } from "../utils/utils";
-import jwtDecode from "jwt-decode";
-import Axios, { AxiosResponse } from "axios";
 import axios from "axios";
-
-const Dropbox = require("dropbox").Dropbox;
 
 const dotenv = require("dotenv");
 

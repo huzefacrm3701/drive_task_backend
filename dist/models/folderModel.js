@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.folderModelSchema = void 0;
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const FolderModel = new mongoose.Schema({
     user_id: {
+        // type: mongoose.Types.ObjectId,
         type: String,
-        default: 'test123',
         required: true,
     },
     business_id: {
@@ -30,35 +30,35 @@ const FolderModel = new mongoose.Schema({
                 type: String,
             },
             parentFolderName: {
-                type: String
-            }
-        }
+                type: String,
+            },
+        },
     ],
     files: [
         {
             type: mongoose.Types.ObjectId,
-            ref: "File"
-        }
+            ref: "File",
+        },
     ],
     created_by: {
         type: String,
-        required: false
+        required: false,
     },
     modified_by: {
         type: String,
-        required: false
+        required: false,
     },
     date_created: {
         type: Date,
-        required: false
+        required: false,
     },
     date_modified: {
         type: Date,
-        required: false
+        required: false,
     },
     is_delete: {
         type: Boolean,
-        required: true
+        required: true,
     },
 });
-exports.folderModelSchema = mongoose.model('Folder', FolderModel);
+exports.folderModelSchema = mongoose.model("Folder", FolderModel);
