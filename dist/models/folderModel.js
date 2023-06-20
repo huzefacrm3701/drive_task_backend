@@ -4,7 +4,6 @@ exports.folderModelSchema = void 0;
 const mongoose = require("mongoose");
 const FolderModel = new mongoose.Schema({
     user_id: {
-        // type: mongoose.Types.ObjectId,
         type: String,
         required: true,
     },

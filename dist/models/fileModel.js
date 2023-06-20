@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fileModelSchema = void 0;
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const fileModel = new mongoose.Schema({
     user_id: {
         type: String,
-        default: 'test123',
         required: true,
     },
     business_id: {
@@ -34,11 +33,11 @@ const fileModel = new mongoose.Schema({
     },
     created_by: {
         type: String,
-        required: false
+        required: false,
     },
     modified_by: {
         type: String,
-        required: false
+        required: false,
     },
     date_created: {
         type: Date,

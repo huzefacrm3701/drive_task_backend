@@ -16,11 +16,9 @@ const utils_1 = require("../utils/utils");
 const axios_1 = __importDefault(require("axios"));
 const dotenv = require("dotenv");
 const { parsed } = dotenv.config();
-const user_id = "test123";
-const business_id = "test12345";
-const company_id = "test@123";
 const addNewFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         let { folderName, parentFolderId } = req.body;
         let newParentFoldersList = [];
         if (!folderName && !parentFolderId) {
@@ -33,7 +31,9 @@ const addNewFolder = async (req, res) => {
         }
         else {
             const parentFolder = await folderModel_1.folderModelSchema.findOne({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 is_delete: false,
                 _id: parentFolderId,
             });
@@ -49,7 +49,7 @@ const addNewFolder = async (req, res) => {
             ];
         }
         const newFolder = new folderModel_1.folderModelSchema({
-            user_id: user_id,
+            user_id,
             business_id: business_id,
             company_id: company_id,
             folderName: folderName.trim(),
@@ -73,9 +73,12 @@ const addNewFolder = async (req, res) => {
 exports.addNewFolder = addNewFolder;
 const getAllFoldersAndFiles = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const allFolderAndFiles = await folderModel_1.folderModelSchema
             .find({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
         })
             .populate("files");
@@ -89,8 +92,11 @@ const getAllFoldersAndFiles = async (req, res) => {
 exports.getAllFoldersAndFiles = getAllFoldersAndFiles;
 const getRootFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const rootFolder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             folderName: "My Folder",
             parentFolderId: "/",
@@ -101,7 +107,9 @@ const getRootFolder = async (req, res) => {
         const folder = await folderModel_1.folderModelSchema.aggregate([
             {
                 $match: {
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     is_delete: false,
                     _id: rootFolder._id,
                 },
@@ -178,10 +186,13 @@ const getRootFolder = async (req, res) => {
 exports.getRootFolder = getRootFolder;
 const getFolderById = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { id } = req.params;
         let folder;
         folder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: new mongoose_1.default.Types.ObjectId(id),
         });
@@ -191,7 +202,9 @@ const getFolderById = async (req, res) => {
         const parentFoldersList = folder.parentFoldersList.slice(1);
         for (let i = 0; i < parentFoldersList.length; i++) {
             folder = await folderModel_1.folderModelSchema.findOne({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 is_delete: false,
                 _id: new mongoose_1.default.Types.ObjectId(parentFoldersList[i].folderId),
             });
@@ -202,7 +215,9 @@ const getFolderById = async (req, res) => {
         folder = await folderModel_1.folderModelSchema.aggregate([
             {
                 $match: {
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     is_delete: false,
                     _id: new mongoose_1.default.Types.ObjectId(id),
                 },
@@ -276,11 +291,14 @@ const getFolderById = async (req, res) => {
 exports.getFolderById = getFolderById;
 const renameFolderById = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { id } = req.params;
         const { newFolderName } = req.body;
         //Updating the Folder Name
         const folder = await folderModel_1.folderModelSchema.findByIdAndUpdate({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: new mongoose_1.default.Types.ObjectId(id),
         }, {
@@ -289,7 +307,9 @@ const renameFolderById = async (req, res) => {
         }, { new: true });
         //Updating the Parent Folder's List
         await folderModel_1.folderModelSchema.updateMany({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             "parentFoldersList.folderId": id,
         }, {
             "parentFoldersList.$.parentFolderName": newFolderName.trim(),
@@ -305,8 +325,11 @@ const renameFolderById = async (req, res) => {
 exports.renameFolderById = renameFolderById;
 const addFilesToFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const folder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: req.params.id,
         });
@@ -320,9 +343,9 @@ const addFilesToFolder = async (req, res) => {
             const downloadUrl = await (0, utils_1.uploadToFirestore)(file.mimetype, file.buffer, fileName, accessToken);
             if (downloadUrl) {
                 const newFile = await fileModel_1.fileModelSchema.create({
-                    user_id: user_id,
-                    business_id: business_id,
-                    company_id: company_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     folderId: folder._id,
                     fileType: file.mimetype,
                     fileName: file.originalname,
@@ -348,10 +371,13 @@ const addFilesToFolder = async (req, res) => {
 exports.addFilesToFolder = addFilesToFolder;
 const addGoogleDriveFilesToFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const files = req.body;
         const { folderId } = req.params;
         let folder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: folderId,
         });
@@ -386,7 +412,7 @@ const addGoogleDriveFilesToFolder = async (req, res) => {
             const downloadUrl = await (0, utils_1.uploadToFirestore)(file.mimeType, arraybuffer, fileName, accessToken);
             if (downloadUrl) {
                 const newFile = await fileModel_1.fileModelSchema.create({
-                    user_id: user_id,
+                    user_id,
                     business_id: business_id,
                     company_id: company_id,
                     folderId: folder._id,
@@ -417,10 +443,13 @@ const addGoogleDriveFilesToFolder = async (req, res) => {
 exports.addGoogleDriveFilesToFolder = addGoogleDriveFilesToFolder;
 const addOneDriveFilesToFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const files = req.body;
         const { folderId } = req.params;
         let folder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: folderId,
         });
@@ -440,9 +469,9 @@ const addOneDriveFilesToFolder = async (req, res) => {
             const downloadUrl = await (0, utils_1.uploadToFirestore)(mimeType, arrayBuffer, fileName, accessToken);
             if (downloadUrl) {
                 const newFile = await fileModel_1.fileModelSchema.create({
-                    user_id: user_id,
-                    business_id: business_id,
-                    company_id: company_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     folderId: folder._id,
                     fileType: mimeType,
                     fileName: file.name,
@@ -469,10 +498,13 @@ const addOneDriveFilesToFolder = async (req, res) => {
 exports.addOneDriveFilesToFolder = addOneDriveFilesToFolder;
 const addDropboxFilesToFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const files = req.body;
         const { folderId } = req.params;
         let folder = await folderModel_1.folderModelSchema.findOne({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: folderId,
         });
@@ -492,9 +524,9 @@ const addDropboxFilesToFolder = async (req, res) => {
             const downloadUrl = await (0, utils_1.uploadToFirestore)(mimeType, arrayBuffer, fileName, accessToken);
             if (downloadUrl) {
                 const newFile = await fileModel_1.fileModelSchema.create({
-                    user_id: user_id,
-                    business_id: business_id,
-                    company_id: company_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     folderId: folder._id,
                     fileType: mimeType,
                     fileName: file.name,
@@ -521,10 +553,13 @@ const addDropboxFilesToFolder = async (req, res) => {
 exports.addDropboxFilesToFolder = addDropboxFilesToFolder;
 const renameFileById = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { id } = req.params;
         const { newFileName } = req.body;
         const file = await fileModel_1.fileModelSchema.findOneAndUpdate({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: id,
         }, {
@@ -546,9 +581,12 @@ const renameFileById = async (req, res) => {
 exports.renameFileById = renameFileById;
 const moveFileToAnotherFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { fileIds, currentFolderId, moveFolderId } = req.body;
         await fileModel_1.fileModelSchema.updateMany({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: fileIds,
         }, {
@@ -556,7 +594,9 @@ const moveFileToAnotherFolder = async (req, res) => {
             date_modified: moment(),
         });
         await folderModel_1.folderModelSchema.findOneAndUpdate({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: currentFolderId,
         }, {
@@ -568,7 +608,9 @@ const moveFileToAnotherFolder = async (req, res) => {
             },
         }, { new: true });
         await folderModel_1.folderModelSchema.findOneAndUpdate({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: moveFolderId,
         }, {
@@ -591,6 +633,7 @@ const moveFileToAnotherFolder = async (req, res) => {
 exports.moveFileToAnotherFolder = moveFileToAnotherFolder;
 const removeFilesFromFolder = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { id } = req.params;
         const { fileIds } = req.body;
         const folder = await folderModel_1.folderModelSchema.findById(id);
@@ -598,7 +641,9 @@ const removeFilesFromFolder = async (req, res) => {
             throw new Error("Folder or File does not exist");
         }
         const result = await fileModel_1.fileModelSchema.updateMany({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             folderId: id,
             _id: fileIds,
         }, {
@@ -615,9 +660,12 @@ const removeFilesFromFolder = async (req, res) => {
 exports.removeFilesFromFolder = removeFilesFromFolder;
 const deleteFoldersByIds = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { folderIds } = req.body;
         const result = await folderModel_1.folderModelSchema.updateMany({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             _id: folderIds,
         }, {
@@ -634,10 +682,13 @@ const deleteFoldersByIds = async (req, res) => {
 exports.deleteFoldersByIds = deleteFoldersByIds;
 const getTrash = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const trashFiles = await fileModel_1.fileModelSchema.aggregate([
             {
                 $match: {
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     is_delete: true,
                 },
             },
@@ -657,7 +708,9 @@ const getTrash = async (req, res) => {
         const trashFolders = await folderModel_1.folderModelSchema.aggregate([
             {
                 $match: {
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     is_delete: true,
                 },
             },
@@ -690,6 +743,7 @@ const getTrash = async (req, res) => {
 exports.getTrash = getTrash;
 const restoreFilesAndFolders = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { restores } = req.body;
         let filesToRootFolder = [];
         let folderIds = [];
@@ -698,7 +752,9 @@ const restoreFilesAndFolders = async (req, res) => {
         for (let i = 0; i < restores.length; i++) {
             if (restores[i].type === "file") {
                 const folder = await folderModel_1.folderModelSchema.findOne({
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     _id: restores[i].folderId,
                     is_delete: false,
                 });
@@ -722,26 +778,34 @@ const restoreFilesAndFolders = async (req, res) => {
         }
         if (filesToBeRestored.length > 0) {
             await fileModel_1.fileModelSchema.updateMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 _id: filesToBeRestored,
             }, { is_delete: false, date_modified: moment() }, { new: true });
         }
         if (foldersToBeRestored.length > 0) {
             await folderModel_1.folderModelSchema.updateMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 _id: foldersToBeRestored,
             }, { is_delete: false, date_modified: moment() }, { new: true });
         }
         if (filesToRootFolder.length > 0) {
             let rootFolder = await folderModel_1.folderModelSchema.findOne({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 is_delete: false,
                 folderName: "My Folder",
                 parentFolderId: "/",
             });
             for (let i = 0; i < filesToRootFolder.length; i++) {
                 await fileModel_1.fileModelSchema.findByIdAndUpdate({
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     _id: filesToRootFolder[i],
                 }, {
                     is_delete: false,
@@ -749,7 +813,9 @@ const restoreFilesAndFolders = async (req, res) => {
                     date_modified: moment(),
                 }, { new: true });
                 await folderModel_1.folderModelSchema.findByIdAndUpdate({
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     _id: folderIds[i],
                 }, {
                     $pull: {
@@ -780,6 +846,7 @@ const restoreFilesAndFolders = async (req, res) => {
 exports.restoreFilesAndFolders = restoreFilesAndFolders;
 const permanentDeleteFilesAndFolders = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { deletedItems } = req.body;
         const bucket = admin.storage().bucket();
         let foldersToBeDeleted = [];
@@ -788,7 +855,9 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         for (let i = 0; i < deletedItems.length; i++) {
             if (deletedItems[i].type === "folder") {
                 const folderList = await folderModel_1.folderModelSchema.find({
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     $or: [
                         { _id: deletedItems[i]._id },
                         { "parentFoldersList.folderId": deletedItems[i]._id },
@@ -799,7 +868,9 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
                     ...folderList.map((folder) => folder._id),
                 ];
                 const filesList = await fileModel_1.fileModelSchema.find({
-                    user_id: user_id,
+                    user_id,
+                    business_id,
+                    company_id,
                     folderId: {
                         $in: foldersToBeDeleted,
                     },
@@ -816,13 +887,17 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         }
         if (foldersToBeDeleted.length > 0) {
             await folderModel_1.folderModelSchema.deleteMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 _id: {
                     $in: foldersToBeDeleted,
                 },
             });
             await fileModel_1.fileModelSchema.deleteMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 folderId: {
                     $in: foldersToBeDeleted,
                 },
@@ -830,13 +905,17 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         }
         if (filesToBeDeleted.length > 0) {
             await fileModel_1.fileModelSchema.deleteMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 _id: {
                     $in: filesToBeDeleted,
                 },
             });
             await folderModel_1.folderModelSchema.updateMany({
-                user_id: user_id,
+                user_id,
+                business_id,
+                company_id,
                 files: {
                     $in: filesToBeDeleted,
                 },
@@ -868,9 +947,12 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
 exports.permanentDeleteFilesAndFolders = permanentDeleteFilesAndFolders;
 const searchFilesAndFoldersByName = async (req, res) => {
     try {
+        const { user_id, business_id, company_id } = req.headers;
         const { searchValue } = req.body;
         const folders = await folderModel_1.folderModelSchema.find({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             folderName: {
                 $regex: searchValue || "",
@@ -878,7 +960,9 @@ const searchFilesAndFoldersByName = async (req, res) => {
             },
         });
         const files = await fileModel_1.fileModelSchema.find({
-            user_id: user_id,
+            user_id,
+            business_id,
+            company_id,
             is_delete: false,
             fileName: {
                 $regex: searchValue || "",
