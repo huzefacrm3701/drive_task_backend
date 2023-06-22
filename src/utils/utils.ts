@@ -1,8 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
 import { storage } from "firebase-admin";
-import { Folder } from "../interfaces/folderInterface";
-import { folderModelSchema } from "../models/folderModel";
-import { FileInterface } from "../interfaces/fileInterface";
 
 export const uploadToFirestore = async (
   mime_type: string,

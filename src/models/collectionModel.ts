@@ -18,7 +18,8 @@ const collectionModel = new mongoose.Schema({
 
   collectionType: {
     type: String,
-    enum: ["Internal", "External"],
+    enum: ["INTERNAL", "EXTERNAL"],
+    default: "INTERNAL",
     required: true,
   },
 
@@ -39,7 +40,13 @@ const collectionModel = new mongoose.Schema({
 
   collectionLink: {
     type: String,
-    required: true,
+    // required: true,
+  },
+
+  collectionStatus: {
+    type: String,
+    enum: ["ACTIVE", "COMPLETED"],
+    default: "ACTIVE",
   },
 
   chosenFolderId: {
@@ -52,13 +59,11 @@ const collectionModel = new mongoose.Schema({
     {
       userId: {
         type: String,
-        required: true,
       },
       files: [
         {
           file: {
             type: mongoose.Types.ObjectId,
-            required: true,
             ref: "File",
           },
           dateSubmitted: {

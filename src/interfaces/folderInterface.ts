@@ -5,7 +5,7 @@ export interface ParentFoldersList {
     parentFolderName: string;
 }
 
-export interface Folder {
+export interface FolderInterface {
     _id: ObjectId;
     userId: string;
     businessId: string;

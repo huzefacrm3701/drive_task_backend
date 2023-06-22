@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadToFirestore = void 0;
-const { v4: uuidv4 } = require("uuid");
 const firebase_admin_1 = require("firebase-admin");
 const uploadToFirestore = async (mime_type, arrayBuffer, fileName, accessToken) => {
     return new Promise(async (resolve, reject) => {
