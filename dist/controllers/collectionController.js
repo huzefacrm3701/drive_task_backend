@@ -18,7 +18,7 @@ const getUserName = (user_id) => {
 const createCollection = async (req, res) => {
     try {
         const { user_id, business_id, company_id } = req.headers;
-        const { collectionType, collectionName, collectionDetails, collectionNotes, chosenFolderId, seperateFolder, fileSizeLimit, linkExpirationLimit, notifyUser, } = req.body;
+        const { collectionType, collectionName, collectionDetails, collectionNotes, chosenFolderId, seperateFolder, fileSizeLimit, linkExpirationLimit, notifyUser, } = req.body.collection;
         const newCollection = new collectionModel_1.collectionModelSchema({
             user_id,
             business_id,
@@ -76,6 +76,7 @@ const createCollection = async (req, res) => {
         newCollection.date_created = moment();
         newCollection.date_modified = moment();
         newCollection.modified_by = getUserName(user_id);
+        newCollection.collectionLink = `${req.body.path}/${newCollection._id}`;
         await newCollection.save();
         return res.status(200).json({
             status: "success",

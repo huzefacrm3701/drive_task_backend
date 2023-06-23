@@ -1,6 +1,7 @@
 import { ObjectId } from "mongoose";
 
 export interface CollectionInterface {
+  _id: ObjectId;
   userId: string;
   businessId: string;
   companyId: string;

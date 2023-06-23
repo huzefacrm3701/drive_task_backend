@@ -35,7 +35,7 @@ export const createCollection = async (req: Request, res: Response) => {
       fileSizeLimit,
       linkExpirationLimit,
       notifyUser,
-    } = req.body;
+    } = req.body.collection;
 
     const newCollection: CollectionInterface = new collectionModelSchema({
       user_id,
@@ -100,6 +100,7 @@ export const createCollection = async (req: Request, res: Response) => {
     newCollection.date_created = moment();
     newCollection.date_modified = moment();
     newCollection.modified_by = getUserName(user_id as string);
+    newCollection.collectionLink = `${req.body.path}/${newCollection._id}`
 
     await newCollection.save();
 
@@ -107,6 +108,7 @@ export const createCollection = async (req: Request, res: Response) => {
       status: "success",
       data: newCollection,
     });
+
   } catch (error: unknown) {
     const errorResponse: ErrorResponse = { error: (error as Error).message };
     return res.status(400).json(errorResponse);
@@ -117,31 +119,31 @@ export const getAllCollections = async (req: Request, res: Response) => {
   try {
     const { user_id, business_id, company_id } = req.headers;
 
-    const allCollections: Array<FolderInterface> = await collectionModelSchema.aggregate([
-      {
-        $match: {
-          user_id,
-          business_id,
-          company_id,
-          is_delete: false,
+    const allCollections: Array<FolderInterface> =
+      await collectionModelSchema.aggregate([
+        {
+          $match: {
+            user_id,
+            business_id,
+            company_id,
+            is_delete: false,
+          },
         },
-      },
-      // {
-      //   $lookup: {
-      //     from: "files",
-      //     foreignField: "_id",
-      //     localField: "files.file",
-      //     as: "files"
-      //   }
-      // },
-      {
-        $project: {
-          is_delete: 0,
-          __v: 0,
-
+        // {
+        //   $lookup: {
+        //     from: "files",
+        //     foreignField: "_id",
+        //     localField: "files.file",
+        //     as: "files"
+        //   }
+        // },
+        {
+          $project: {
+            is_delete: 0,
+            __v: 0,
+          },
         },
-      },
-    ])
+      ]);
 
     return res.status(200).json({ data: allCollections });
   } catch (error: unknown) {
