@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { folderModelSchema } from "../models/folderModel";
 import mongoose, { ObjectId } from "mongoose";
 import { fileModelSchema } from "../models/fileModel";
-import { FolderInterface, ParentFoldersList } from "../interfaces/folderInterface";
+import {
+  FolderInterface,
+  ParentFoldersList,
+} from "../interfaces/folderInterface";
 import { ErrorResponse } from "../interfaces/errorInterface";
 import { FileInterface } from "../interfaces/fileInterface";
 
@@ -398,35 +401,39 @@ export const getTrash = async (req: Request, res: Response) => {
       },
     ]);
 
-    const trashFolders: Array<FolderInterface> = await folderModelSchema.aggregate([
-      {
-        $match: {
-          user_id,
-          business_id,
-          company_id,
-          is_delete: true,
+    const trashFolders: Array<FolderInterface> =
+      await folderModelSchema.aggregate([
+        {
+          $match: {
+            user_id,
+            business_id,
+            company_id,
+            is_delete: true,
+          },
         },
-      },
-      {
-        $addFields: {
-          type: "folder",
+        {
+          $addFields: {
+            type: "folder",
+          },
         },
-      },
-      {
-        $project: {
-          is_delete: 0,
-          __v: 0,
-          parentFoldersList: 0,
-          files: 0,
+        {
+          $project: {
+            is_delete: 0,
+            __v: 0,
+            parentFoldersList: 0,
+            files: 0,
+          },
         },
-      },
-    ]);
+      ]);
 
     const trash: Array<FileInterface | FolderInterface> = [
       ...trashFiles,
       ...trashFolders,
     ].sort(
-      (a: FileInterface | FolderInterface, b: FileInterface | FolderInterface) =>
+      (
+        a: FileInterface | FolderInterface,
+        b: FileInterface | FolderInterface
+      ) =>
         new Date(b.date_modified).getTime() -
         new Date(a.date_modified).getTime()
     );
@@ -613,10 +620,10 @@ export const permanentDeleteFilesAndFolders = async (
 
         filesToBeDeletedFromFirebase = [
           ...filesToBeDeletedFromFirebase,
-          ...filesList.map((file: any) => file.uploadedFileName),
+          ...filesList.map((file: any) => file.uploadFilename),
         ];
       } else if (deletedItems[i].type === "file") {
-        filesToBeDeletedFromFirebase.push(deletedItems[i].uploadedFileName);
+        filesToBeDeletedFromFirebase.push(deletedItems[i].uploadFilename);
         filesToBeDeleted.push(deletedItems[i]._id);
       }
     }
@@ -673,6 +680,12 @@ export const permanentDeleteFilesAndFolders = async (
     for (let uploadFilename of filesToBeDeletedFromFirebase) {
       await bucket.file(uploadFilename).delete();
     }
+
+    // for (let url of filesToBeDeletedFromFirebase) {
+    //   // console.log(url);
+    //   const filePath = new URL(url).pathname;
+    //   await bucket.file(filePath).delete();
+    // }
 
     return res.status(200).json({
       status: "success",

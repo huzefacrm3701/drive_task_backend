@@ -535,11 +535,11 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
                 });
                 filesToBeDeletedFromFirebase = [
                     ...filesToBeDeletedFromFirebase,
-                    ...filesList.map((file) => file.uploadedFileName),
+                    ...filesList.map((file) => file.uploadFilename),
                 ];
             }
             else if (deletedItems[i].type === "file") {
-                filesToBeDeletedFromFirebase.push(deletedItems[i].uploadedFileName);
+                filesToBeDeletedFromFirebase.push(deletedItems[i].uploadFilename);
                 filesToBeDeleted.push(deletedItems[i]._id);
             }
         }
@@ -588,6 +588,11 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         for (let uploadFilename of filesToBeDeletedFromFirebase) {
             await bucket.file(uploadFilename).delete();
         }
+        // for (let url of filesToBeDeletedFromFirebase) {
+        //   // console.log(url);
+        //   const filePath = new URL(url).pathname;
+        //   await bucket.file(filePath).delete();
+        // }
         return res.status(200).json({
             status: "success",
             message: "Foldes And Files Successfully Deleted",
