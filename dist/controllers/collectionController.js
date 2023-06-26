@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllCollections = exports.createCollection = void 0;
+exports.deleteCollection = exports.toggleCollectionStatus = exports.getAllCollections = exports.createCollection = void 0;
 const folderModel_1 = require("../models/folderModel");
 const collectionModel_1 = require("../models/collectionModel");
 const admin = require("firebase-admin");
@@ -92,6 +92,7 @@ exports.createCollection = createCollection;
 const getAllCollections = async (req, res) => {
     try {
         const { user_id, business_id, company_id } = req.headers;
+        const { filter } = req.params;
         const allCollections = await collectionModel_1.collectionModelSchema.aggregate([
             {
                 $match: {
@@ -99,6 +100,7 @@ const getAllCollections = async (req, res) => {
                     business_id,
                     company_id,
                     is_delete: false,
+                    collectionStatus: filter,
                 },
             },
             // {
@@ -124,3 +126,49 @@ const getAllCollections = async (req, res) => {
     }
 };
 exports.getAllCollections = getAllCollections;
+const toggleCollectionStatus = async (req, res) => {
+    try {
+        const { user_id, business_id, company_id } = req.headers;
+        const { id } = req.params;
+        const collection = await collectionModel_1.collectionModelSchema.findById({
+            user_id,
+            business_id,
+            company_id,
+            is_delete: false,
+            _id: id,
+        });
+        collection.collectionStatus =
+            collection.collectionStatus === "ACTIVE" ? "COMPLETED" : "ACTIVE";
+        collection.date_modified = moment();
+        const updatedCollection = await collection.save();
+        return res.status(200).json({ status: "success", data: updatedCollection });
+    }
+    catch (error) {
+        const errorResponse = { error: error.message };
+        return res.status(400).json(errorResponse);
+    }
+};
+exports.toggleCollectionStatus = toggleCollectionStatus;
+const deleteCollection = async (req, res) => {
+    try {
+        const { user_id, business_id, company_id } = req.headers;
+        const { id } = req.params;
+        const collection = await collectionModel_1.collectionModelSchema.findOneAndUpdate({
+            user_id,
+            business_id,
+            company_id,
+            is_delete: false,
+            collectionStatus: "COMPLETED",
+            _id: id,
+        }, {
+            is_delete: true,
+            date_modified: moment(),
+        }, { new: true });
+        return res.status(200).json({ status: "success", data: collection });
+    }
+    catch (error) {
+        const errorResponse = { error: error.message };
+        return res.status(400).json(errorResponse);
+    }
+};
+exports.deleteCollection = deleteCollection;
