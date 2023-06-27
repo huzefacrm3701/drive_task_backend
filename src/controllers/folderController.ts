@@ -620,10 +620,10 @@ export const permanentDeleteFilesAndFolders = async (
 
         filesToBeDeletedFromFirebase = [
           ...filesToBeDeletedFromFirebase,
-          ...filesList.map((file: any) => file.uploadFilename),
+          ...filesList.map((file: any) => file.uploadedFileName),
         ];
       } else if (deletedItems[i].type === "file") {
-        filesToBeDeletedFromFirebase.push(deletedItems[i].uploadFilename);
+        filesToBeDeletedFromFirebase.push(deletedItems[i].uploadedFileName);
         filesToBeDeleted.push(deletedItems[i]._id);
       }
     }

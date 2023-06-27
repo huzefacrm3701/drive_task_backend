@@ -78,7 +78,10 @@ folderRouter.delete(
 folderRouter.post("/createCollection", collectionController.createCollection);
 
 //Get All Collections
-folderRouter.get("/getAllCollections/:filter", collectionController.getAllCollections);
+folderRouter.get(
+  "/getAllCollections/:filter",
+  collectionController.getAllCollections
+);
 
 //Disable Collection
 folderRouter.delete(
@@ -90,6 +93,17 @@ folderRouter.delete(
 folderRouter.delete(
   "/deleteCollectionById/:id",
   collectionController.deleteCollection
+);
+
+//Check CollectionValidity
+folderRouter.get(
+  "/checkCollectionValidity/:id",
+  collectionController.checkCollectionValidity
+);
+
+folderRouter.delete(
+  "/deleteAllCollections",
+  collectionController.deleteAllCollections
 );
 
 export default folderRouter;

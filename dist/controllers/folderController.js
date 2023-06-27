@@ -535,11 +535,11 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
                 });
                 filesToBeDeletedFromFirebase = [
                     ...filesToBeDeletedFromFirebase,
-                    ...filesList.map((file) => file.uploadFilename),
+                    ...filesList.map((file) => file.uploadedFileName),
                 ];
             }
             else if (deletedItems[i].type === "file") {
-                filesToBeDeletedFromFirebase.push(deletedItems[i].uploadFilename);
+                filesToBeDeletedFromFirebase.push(deletedItems[i].uploadedFileName);
                 filesToBeDeleted.push(deletedItems[i]._id);
             }
         }

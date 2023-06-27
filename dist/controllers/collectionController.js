@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCollection = exports.toggleCollectionStatus = exports.getAllCollections = exports.createCollection = void 0;
+exports.deleteAllCollections = exports.checkCollectionValidity = exports.deleteCollection = exports.toggleCollectionStatus = exports.getAllCollections = exports.createCollection = void 0;
 const folderModel_1 = require("../models/folderModel");
 const collectionModel_1 = require("../models/collectionModel");
 const admin = require("firebase-admin");
@@ -172,3 +172,44 @@ const deleteCollection = async (req, res) => {
     }
 };
 exports.deleteCollection = deleteCollection;
+const checkCollectionValidity = async (req, res) => {
+    try {
+        const { user_id, business_id, company_id } = req.headers;
+        const { id } = req.params;
+        const collection = await collectionModel_1.collectionModelSchema.findOne({
+            user_id: user_id,
+            business_id: business_id,
+            company_id: company_id,
+            _id: id,
+            collectionStatus: "ACTIVE",
+            is_delete: false,
+        });
+        if (!collection) {
+            throw new Error("Collection Link Expired or Collection Doesn't Exists");
+        }
+        const collectionExpiration = new Date(collection.linkExpirationLimit).getTime() > new Date().getTime();
+        if (!collectionExpiration) {
+            throw new Error("Collection Link Expired or Collection Doesn't Exists");
+        }
+        return res.status(200).json({ status: "success", data: collection });
+    }
+    catch (error) {
+        const errorResponse = { error: error.message };
+        return res.status(400).json({
+            status: "failure",
+            error: errorResponse,
+        });
+    }
+};
+exports.checkCollectionValidity = checkCollectionValidity;
+const deleteAllCollections = async (req, res) => {
+    try {
+        const deleteCollection = await collectionModel_1.collectionModelSchema.deleteMany({});
+        return res.status(200).json({ status: "success" });
+    }
+    catch (error) {
+        const errorResponse = { error: error.message };
+        return res.status(400).json(errorResponse);
+    }
+};
+exports.deleteAllCollections = deleteAllCollections;

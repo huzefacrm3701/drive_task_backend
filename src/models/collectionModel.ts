@@ -40,7 +40,6 @@ const collectionModel = new mongoose.Schema({
 
   collectionLink: {
     type: String,
-    // required: true,
   },
 
   collectionStatus: {

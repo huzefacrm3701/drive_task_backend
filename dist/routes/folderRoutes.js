@@ -67,4 +67,7 @@ folderRouter.get("/getAllCollections/:filter", collectionController.getAllCollec
 folderRouter.delete("/toggleCollectionStatusById/:id", collectionController.toggleCollectionStatus);
 //Delete Collection
 folderRouter.delete("/deleteCollectionById/:id", collectionController.deleteCollection);
+//Check CollectionValidity
+folderRouter.get("/checkCollectionValidity/:id", collectionController.checkCollectionValidity);
+folderRouter.delete("/deleteAllCollections", collectionController.deleteAllCollections);
 exports.default = folderRouter;
