@@ -530,7 +530,7 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
                     business_id,
                     company_id,
                     folderId: {
-                        $in: foldersToBeDeleted,
+                        $in: folderList,
                     },
                 });
                 filesToBeDeletedFromFirebase = [
@@ -588,11 +588,6 @@ const permanentDeleteFilesAndFolders = async (req, res) => {
         for (let uploadFilename of filesToBeDeletedFromFirebase) {
             await bucket.file(uploadFilename).delete();
         }
-        // for (let url of filesToBeDeletedFromFirebase) {
-        //   // console.log(url);
-        //   const filePath = new URL(url).pathname;
-        //   await bucket.file(filePath).delete();
-        // }
         return res.status(200).json({
             status: "success",
             message: "Foldes And Files Successfully Deleted",

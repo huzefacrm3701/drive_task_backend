@@ -51,6 +51,9 @@ const collectionModel = new mongoose.Schema({
             userId: {
                 type: String,
             },
+            folderId: {
+                type: mongoose.Types.ObjectId,
+            },
             files: [
                 {
                     file: {
@@ -76,15 +79,15 @@ const collectionModel = new mongoose.Schema({
     fileSizeLimit: {
         type: Number,
         enum: [
-            1 * 1024,
-            10 * 1024,
-            100 * 1024,
-            1 * 1024 * 1024,
-            5 * 1024 * 1024,
-            10 * 1024 * 1024,
-            25 * 1024 * 1024,
+            1 * Math.pow(1024, 2),
+            10 * Math.pow(1024, 2),
+            100 * Math.pow(1024, 2),
+            1 * Math.pow(1024, 3),
+            5 * Math.pow(1024, 3),
+            10 * Math.pow(1024, 3),
+            25 * Math.pow(1024, 3),
         ],
-        default: 100 * 1024,
+        default: 100 * 1024 * 1024,
     },
     linkExpirationLimit: {
         type: Date,

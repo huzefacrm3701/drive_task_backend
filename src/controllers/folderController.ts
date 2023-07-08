@@ -614,7 +614,7 @@ export const permanentDeleteFilesAndFolders = async (
           business_id,
           company_id,
           folderId: {
-            $in: foldersToBeDeleted,
+            $in: folderList,
           },
         });
 
@@ -622,6 +622,7 @@ export const permanentDeleteFilesAndFolders = async (
           ...filesToBeDeletedFromFirebase,
           ...filesList.map((file: any) => file.uploadedFileName),
         ];
+
       } else if (deletedItems[i].type === "file") {
         filesToBeDeletedFromFirebase.push(deletedItems[i].uploadedFileName);
         filesToBeDeleted.push(deletedItems[i]._id);
@@ -680,12 +681,6 @@ export const permanentDeleteFilesAndFolders = async (
     for (let uploadFilename of filesToBeDeletedFromFirebase) {
       await bucket.file(uploadFilename).delete();
     }
-
-    // for (let url of filesToBeDeletedFromFirebase) {
-    //   // console.log(url);
-    //   const filePath = new URL(url).pathname;
-    //   await bucket.file(filePath).delete();
-    // }
 
     return res.status(200).json({
       status: "success",

@@ -5,17 +5,60 @@ import { Request, Response } from "express";
 
 const { v4: uuidv4 } = require("uuid");
 import moment from "moment";
-import { FileInterface } from "../interfaces/fileInterface";
+import { FileInterface, RequestFile } from "../interfaces/fileInterface";
 import { FolderInterface } from "../interfaces/folderInterface";
 import { fileModelSchema } from "../models/fileModel";
 import { folderModelSchema } from "../models/folderModel";
 import { uploadToFirestore } from "../utils/utils";
 import axios from "axios";
 import { ErrorResponse } from "../interfaces/errorInterface";
+import mongoose from "mongoose";
 
 const dotenv = require("dotenv");
 
 const { parsed } = dotenv.config();
+
+export const storeFiles = async (
+  user_id: string,
+  business_id: string,
+  company_id: string,
+  files,
+  folderId: mongoose.Schema.Types.ObjectId
+) => {
+  let filesArray: Array<FileInterface> = [];
+  let file: RequestFile;
+
+  for (file of files) {
+    const accessToken = uuidv4();
+    const fileName = `${accessToken}-${file.originalname}`;
+    const downloadUrl = await uploadToFirestore(
+      file.mimetype,
+      file.buffer,
+      fileName,
+      accessToken
+    );
+
+    if (downloadUrl) {
+      const newFile: FileInterface = await fileModelSchema.create({
+        user_id,
+        business_id,
+        company_id,
+        folderId: folderId,
+        fileType: file.mimetype,
+        fileName: file.originalname,
+        uploadedFileName: fileName,
+        url: downloadUrl,
+        created_by: user_id,
+        modified_by: "",
+        date_created: moment(),
+        date_modified: moment(),
+      });
+
+      filesArray.push(newFile);
+    }
+  }
+  return filesArray;
+};
 
 export const addFilesToFolder = async (req: any, res: Response) => {
   try {
@@ -33,41 +76,18 @@ export const addFilesToFolder = async (req: any, res: Response) => {
       throw new Error("Folder Does Not Exist");
     }
 
-    let filesArray: Array<FileInterface> = [];
-
-    for (const file of req.files) {
-      const accessToken = uuidv4();
-      const fileName = `${accessToken}-${file.originalname}`;
-      const downloadUrl = await uploadToFirestore(
-        file.mimetype,
-        file.buffer,
-        fileName,
-        accessToken
-      );
-
-      if (downloadUrl) {
-        const newFile = await fileModelSchema.create({
-          user_id,
-          business_id,
-          company_id,
-          folderId: folder._id,
-          fileType: file.mimetype,
-          fileName: file.originalname,
-          uploadedFileName: fileName,
-          url: downloadUrl,
-          created_by: user_id,
-          modified_by: "",
-          date_created: moment(),
-          date_modified: moment(),
-        });
-
-        filesArray.push(newFile);
-        folder.files.push(newFile._id);
-      }
-    }
+    const files = await storeFiles(
+      user_id,
+      business_id,
+      company_id,
+      req.files,
+      folder._id
+    );
+    folder.files.push(...files.map((file) => file._id));
 
     await folder.save();
-    res.status(200).json({ data: filesArray });
+
+    res.status(200).json({ data: files });
   } catch (error: unknown) {
     const errorResponse: ErrorResponse = { error: (error as Error).message };
     return res.status(400).json(errorResponse);
@@ -175,9 +195,24 @@ export const addGoogleDriveFilesToFolder = async (req: any, res: Response) => {
 
     res.status(200).json({ data: filesArray });
   } catch (error: unknown) {
-    console.log("errrr", error);
-    const errorResponse: ErrorResponse = { error: (error as Error).message };
-    return res.status(400).json(errorResponse);
+    let errorMessage: string, statusCode: number;
+    switch ((error as ErrorResponse).code.toString()) {
+      case "404":
+        statusCode = 403;
+        errorMessage = "Private or Restricted file can not be uploaded";
+        break;
+      case "429":
+        statusCode = 429;
+        errorMessage = "Too Many Requests... Try again after some time";
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Something went wrong";
+    }
+    return res.status(statusCode).json({
+      status: "Failed",
+      message: errorMessage,
+    });
   }
 };
 
@@ -248,9 +283,24 @@ export const addOneDriveFilesToFolder = async (req: any, res: Response) => {
 
     res.status(200).json({ data: filesArray });
   } catch (error: unknown) {
-    console.log("errrr", error);
-    const errorResponse: ErrorResponse = { error: (error as Error).message };
-    return res.status(400).json(errorResponse);
+    let errorMessage: string, statusCode: number;
+    switch ((error as ErrorResponse).code.toString()) {
+      case "404":
+        statusCode = 403;
+        errorMessage = "Private or Restricted file can not be uploaded";
+        break;
+      case "429":
+        statusCode = 429;
+        errorMessage = "Too Many Requests... Try again after some time";
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Something went wrong";
+    }
+    return res.status(statusCode).json({
+      status: "Failed",
+      message: errorMessage,
+    });
   }
 };
 
@@ -321,9 +371,24 @@ export const addDropboxFilesToFolder = async (req: any, res: Response) => {
 
     res.status(200).json({ data: filesArray });
   } catch (error: unknown) {
-    console.log("errrr", error);
-    const errorResponse: ErrorResponse = { error: (error as Error).message };
-    return res.status(400).json(errorResponse);
+    let errorMessage: string, statusCode: number;
+    switch ((error as ErrorResponse).code.toString()) {
+      case "404":
+        statusCode = 403;
+        errorMessage = "Private or Restricted file can not be uploaded";
+        break;
+      case "429":
+        statusCode = 429;
+        errorMessage = "Too Many Requests... Try again after some time";
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Something went wrong";
+    }
+    return res.status(statusCode).json({
+      status: "Failed",
+      message: errorMessage,
+    });
   }
 };
 
@@ -463,3 +528,13 @@ export const removeFilesFromFolder = async (req: Request, res: Response) => {
     return res.status(400).json(errorResponse);
   }
 };
+
+export const deleteFiles = async (req: Request, res: Response) => {
+  try {
+    const deleteFiles = await fileModelSchema.deleteMany({});
+    return res.status(200).json({ status: "success" });
+  } catch (error) {
+    const errorResponse: ErrorResponse = { error: (error as Error).message };
+    return res.status(400).json(errorResponse);
+  }
+}

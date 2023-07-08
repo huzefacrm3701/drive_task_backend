@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeFilesFromFolder = exports.moveFileToAnotherFolder = exports.renameFileById = exports.addDropboxFilesToFolder = exports.addOneDriveFilesToFolder = exports.addGoogleDriveFilesToFolder = exports.addFilesToFolder = void 0;
+exports.deleteFiles = exports.removeFilesFromFolder = exports.moveFileToAnotherFolder = exports.renameFileById = exports.addDropboxFilesToFolder = exports.addOneDriveFilesToFolder = exports.addGoogleDriveFilesToFolder = exports.addFilesToFolder = exports.storeFiles = void 0;
 const { GoogleAuth } = require("google-auth-library");
 const { google } = require("googleapis");
 const { v4: uuidv4 } = require("uuid");
@@ -14,6 +14,34 @@ const utils_1 = require("../utils/utils");
 const axios_1 = __importDefault(require("axios"));
 const dotenv = require("dotenv");
 const { parsed } = dotenv.config();
+const storeFiles = async (user_id, business_id, company_id, files, folderId) => {
+    let filesArray = [];
+    let file;
+    for (file of files) {
+        const accessToken = uuidv4();
+        const fileName = `${accessToken}-${file.originalname}`;
+        const downloadUrl = await (0, utils_1.uploadToFirestore)(file.mimetype, file.buffer, fileName, accessToken);
+        if (downloadUrl) {
+            const newFile = await fileModel_1.fileModelSchema.create({
+                user_id,
+                business_id,
+                company_id,
+                folderId: folderId,
+                fileType: file.mimetype,
+                fileName: file.originalname,
+                uploadedFileName: fileName,
+                url: downloadUrl,
+                created_by: user_id,
+                modified_by: "",
+                date_created: (0, moment_1.default)(),
+                date_modified: (0, moment_1.default)(),
+            });
+            filesArray.push(newFile);
+        }
+    }
+    return filesArray;
+};
+exports.storeFiles = storeFiles;
 const addFilesToFolder = async (req, res) => {
     try {
         const { user_id, business_id, company_id } = req.headers;
@@ -27,32 +55,10 @@ const addFilesToFolder = async (req, res) => {
         if (!folder) {
             throw new Error("Folder Does Not Exist");
         }
-        let filesArray = [];
-        for (const file of req.files) {
-            const accessToken = uuidv4();
-            const fileName = `${accessToken}-${file.originalname}`;
-            const downloadUrl = await (0, utils_1.uploadToFirestore)(file.mimetype, file.buffer, fileName, accessToken);
-            if (downloadUrl) {
-                const newFile = await fileModel_1.fileModelSchema.create({
-                    user_id,
-                    business_id,
-                    company_id,
-                    folderId: folder._id,
-                    fileType: file.mimetype,
-                    fileName: file.originalname,
-                    uploadedFileName: fileName,
-                    url: downloadUrl,
-                    created_by: user_id,
-                    modified_by: "",
-                    date_created: (0, moment_1.default)(),
-                    date_modified: (0, moment_1.default)(),
-                });
-                filesArray.push(newFile);
-                folder.files.push(newFile._id);
-            }
-        }
+        const files = await (0, exports.storeFiles)(user_id, business_id, company_id, req.files, folder._id);
+        folder.files.push(...files.map((file) => file._id));
         await folder.save();
-        res.status(200).json({ data: filesArray });
+        res.status(200).json({ data: files });
     }
     catch (error) {
         const errorResponse = { error: error.message };
@@ -126,9 +132,24 @@ const addGoogleDriveFilesToFolder = async (req, res) => {
         res.status(200).json({ data: filesArray });
     }
     catch (error) {
-        console.log("errrr", error);
-        const errorResponse = { error: error.message };
-        return res.status(400).json(errorResponse);
+        let errorMessage, statusCode;
+        switch (error.code.toString()) {
+            case "404":
+                statusCode = 403;
+                errorMessage = "Private or Restricted file can not be uploaded";
+                break;
+            case "429":
+                statusCode = 429;
+                errorMessage = "Too Many Requests... Try again after some time";
+                break;
+            default:
+                statusCode = 500;
+                errorMessage = "Something went wrong";
+        }
+        return res.status(statusCode).json({
+            status: "Failed",
+            message: errorMessage,
+        });
     }
 };
 exports.addGoogleDriveFilesToFolder = addGoogleDriveFilesToFolder;
@@ -181,9 +202,24 @@ const addOneDriveFilesToFolder = async (req, res) => {
         res.status(200).json({ data: filesArray });
     }
     catch (error) {
-        console.log("errrr", error);
-        const errorResponse = { error: error.message };
-        return res.status(400).json(errorResponse);
+        let errorMessage, statusCode;
+        switch (error.code.toString()) {
+            case "404":
+                statusCode = 403;
+                errorMessage = "Private or Restricted file can not be uploaded";
+                break;
+            case "429":
+                statusCode = 429;
+                errorMessage = "Too Many Requests... Try again after some time";
+                break;
+            default:
+                statusCode = 500;
+                errorMessage = "Something went wrong";
+        }
+        return res.status(statusCode).json({
+            status: "Failed",
+            message: errorMessage,
+        });
     }
 };
 exports.addOneDriveFilesToFolder = addOneDriveFilesToFolder;
@@ -236,9 +272,24 @@ const addDropboxFilesToFolder = async (req, res) => {
         res.status(200).json({ data: filesArray });
     }
     catch (error) {
-        console.log("errrr", error);
-        const errorResponse = { error: error.message };
-        return res.status(400).json(errorResponse);
+        let errorMessage, statusCode;
+        switch (error.code.toString()) {
+            case "404":
+                statusCode = 403;
+                errorMessage = "Private or Restricted file can not be uploaded";
+                break;
+            case "429":
+                statusCode = 429;
+                errorMessage = "Too Many Requests... Try again after some time";
+                break;
+            default:
+                statusCode = 500;
+                errorMessage = "Something went wrong";
+        }
+        return res.status(statusCode).json({
+            status: "Failed",
+            message: errorMessage,
+        });
     }
 };
 exports.addDropboxFilesToFolder = addDropboxFilesToFolder;
@@ -349,3 +400,14 @@ const removeFilesFromFolder = async (req, res) => {
     }
 };
 exports.removeFilesFromFolder = removeFilesFromFolder;
+const deleteFiles = async (req, res) => {
+    try {
+        const deleteFiles = await fileModel_1.fileModelSchema.deleteMany({});
+        return res.status(200).json({ status: "success" });
+    }
+    catch (error) {
+        const errorResponse = { error: error.message };
+        return res.status(400).json(errorResponse);
+    }
+};
+exports.deleteFiles = deleteFiles;

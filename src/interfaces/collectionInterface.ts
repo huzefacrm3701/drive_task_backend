@@ -2,9 +2,9 @@ import { ObjectId } from "mongoose";
 
 export interface CollectionInterface {
   _id: ObjectId;
-  userId: string;
-  businessId: string;
-  companyId: string;
+  user_id: string;
+  business_id: string;
+  company_id: string;
   collectionType: "INTERNAL" | "EXTERNAL";
   collectionName: string;
   collectionDetails?: string;
@@ -14,6 +14,7 @@ export interface CollectionInterface {
   chosenFolderId: ObjectId;
   usersSubmitted: {
     userId: string;
+    folderId: ObjectId;
     files: {
       file: ObjectId;
       dateSubmitted: Date;

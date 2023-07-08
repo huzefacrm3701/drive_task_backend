@@ -27,23 +27,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const folderController = __importStar(require("../controllers/folderController"));
-const folderRouter = express_1.default.Router();
-// Add files and folders route
-folderRouter.post("/addNewFolder", folderController.addNewFolder);
-// Get files and folders route
-folderRouter.get("/getRootFolder", folderController.getRootFolder);
-folderRouter.get("/getFolderById/:id", folderController.getFolderById);
-folderRouter.get("/getAllFilesAndFolders", folderController.getAllFoldersAndFiles);
-// Search files and folders route
-folderRouter.get("/searchFilesAndFoldersByName", folderController.searchFilesAndFoldersByName);
-// Rename folders route
-folderRouter.patch("/renameFolderById/:id", folderController.renameFolderById);
-// Delete folders route
-folderRouter.delete("/deleteFoldersByIds", folderController.deleteFoldersByIds);
-// Trash and Restore route
-folderRouter.get("/getTrash", folderController.getTrash);
-folderRouter.patch("/restoreFilesAndFolders", folderController.restoreFilesAndFolders);
-// Permanentally delete files and folders route
-folderRouter.delete("/permanentDeleteFilesAndFolders", folderController.permanentDeleteFilesAndFolders);
-exports.default = folderRouter;
+const collectionController = __importStar(require("../controllers/collectionController"));
+const collectionRouter = express_1.default.Router();
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+// Create Collection route
+collectionRouter.post("/createCollection", collectionController.createCollection);
+//Get All Collections
+collectionRouter.get("/getAllCollections/:filter", collectionController.getAllCollections);
+//Disable Collection
+collectionRouter.delete("/toggleCollectionStatusById/:id", collectionController.toggleCollectionStatus);
+//Delete Collection
+collectionRouter.delete("/deleteCollectionById/:id", collectionController.deleteCollection);
+//Check CollectionValidity
+collectionRouter.get("/checkCollectionValidity/:id", collectionController.checkCollectionValidity);
+collectionRouter.delete("/deleteAllCollections", collectionController.deleteAllCollections);
+collectionRouter.post("/submitFilesForCollection/:id", upload.array("files"), collectionController.submitFilesForCollection);
+exports.default = collectionRouter;

@@ -27,23 +27,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const folderController = __importStar(require("../controllers/folderController"));
-const folderRouter = express_1.default.Router();
-// Add files and folders route
-folderRouter.post("/addNewFolder", folderController.addNewFolder);
-// Get files and folders route
-folderRouter.get("/getRootFolder", folderController.getRootFolder);
-folderRouter.get("/getFolderById/:id", folderController.getFolderById);
-folderRouter.get("/getAllFilesAndFolders", folderController.getAllFoldersAndFiles);
-// Search files and folders route
-folderRouter.get("/searchFilesAndFoldersByName", folderController.searchFilesAndFoldersByName);
-// Rename folders route
-folderRouter.patch("/renameFolderById/:id", folderController.renameFolderById);
-// Delete folders route
-folderRouter.delete("/deleteFoldersByIds", folderController.deleteFoldersByIds);
-// Trash and Restore route
-folderRouter.get("/getTrash", folderController.getTrash);
-folderRouter.patch("/restoreFilesAndFolders", folderController.restoreFilesAndFolders);
-// Permanentally delete files and folders route
-folderRouter.delete("/permanentDeleteFilesAndFolders", folderController.permanentDeleteFilesAndFolders);
-exports.default = folderRouter;
+const cloudPickerController = __importStar(require("../controllers/cloudPickerController"));
+const cloudPickerRouter = express_1.default.Router();
+cloudPickerRouter.post("/createCloudPickerUser", cloudPickerController.createCloudPickerUser);
+cloudPickerRouter.post("/storeAccessToken", cloudPickerController.storeAccessToken);
+cloudPickerRouter.get("/getAccessToken", cloudPickerController.getAccessToken);
+exports.default = cloudPickerRouter;
